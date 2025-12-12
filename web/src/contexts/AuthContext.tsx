@@ -5,6 +5,8 @@ interface User {
   email: string
   name: string
   picture: string
+  is_admin: boolean
+  can_create_events: boolean
 }
 
 interface AuthContextType {

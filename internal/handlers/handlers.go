@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"farm-time/internal/auth"
 	"farm-time/internal/db"
 	"farm-time/internal/models"
 )
@@ -45,6 +46,17 @@ func (h *Handler) ListEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
+	// Check if user has permission to create events
+	user := auth.GetUserFromContext(r.Context())
+	if user == nil {
+		h.respondError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if !user.CanCreateEvents && !user.IsAdmin {
+		h.respondError(w, http.StatusForbidden, "You don't have permission to create events")
+		return
+	}
+
 	var req models.CreateEventRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.respondError(w, http.StatusBadRequest, "Invalid request body")

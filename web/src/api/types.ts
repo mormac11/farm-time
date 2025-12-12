@@ -130,3 +130,19 @@ export interface UpdateTodoRequest {
 export interface EventWithAll extends EventWithMeals {
   todos: Todo[]
 }
+
+// User types (for admin)
+export interface User {
+  id: string
+  email: string
+  name: string
+  picture: string
+  is_admin: boolean
+  can_create_events: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface UpdateUserPermissionsRequest {
+  can_create_events?: boolean
+}

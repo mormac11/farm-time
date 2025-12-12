@@ -58,13 +58,19 @@ type UpdateAttendeeRequest struct {
 
 // User represents a user authenticated via Google OAuth
 type User struct {
-	ID        string    `json:"id"`
-	GoogleID  string    `json:"-"` // Never expose to frontend
-	Email     string    `json:"email"`
-	Name      string    `json:"name"`
-	Picture   string    `json:"picture"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID              string    `json:"id"`
+	GoogleID        string    `json:"-"` // Never expose to frontend
+	Email           string    `json:"email"`
+	Name            string    `json:"name"`
+	Picture         string    `json:"picture"`
+	IsAdmin         bool      `json:"is_admin"`
+	CanCreateEvents bool      `json:"can_create_events"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
+type UpdateUserPermissionsRequest struct {
+	CanCreateEvents *bool `json:"can_create_events,omitempty"`
 }
 
 // Session represents a user session

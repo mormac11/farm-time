@@ -62,6 +62,13 @@ func main() {
 	// API routes (protected)
 	r.Route("/api", func(r chi.Router) {
 		r.Use(authHandler.RequireAuth)
+
+		// Admin routes
+		r.Route("/admin", func(r chi.Router) {
+			r.Get("/users", h.ListUsers)
+			r.Put("/users/{userId}", h.UpdateUserPermissions)
+		})
+
 		// Events
 		r.Route("/events", func(r chi.Router) {
 			r.Get("/", h.ListEvents)

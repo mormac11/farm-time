@@ -14,6 +14,8 @@ import type {
   Todo,
   CreateTodoRequest,
   UpdateTodoRequest,
+  User,
+  UpdateUserPermissionsRequest,
 } from './types'
 
 const API_BASE = '/api'
@@ -158,5 +160,14 @@ export const api = {
   deleteTodo: (eventId: string, todoId: string) =>
     request<void>(`/events/${eventId}/todos/${todoId}`, {
       method: 'DELETE',
+    }),
+
+  // Admin
+  listUsers: () => request<User[]>('/admin/users'),
+
+  updateUserPermissions: (userId: string, data: UpdateUserPermissionsRequest) =>
+    request<User>(`/admin/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
     }),
 }

@@ -70,6 +70,8 @@ func (db *DB) Migrate(ctx context.Context) error {
 		email TEXT UNIQUE NOT NULL,
 		name TEXT NOT NULL,
 		picture TEXT,
+		is_admin BOOLEAN DEFAULT FALSE,
+		can_create_events BOOLEAN DEFAULT FALSE,
 		created_at TIMESTAMPTZ DEFAULT NOW(),
 		updated_at TIMESTAMPTZ DEFAULT NOW()
 	);
@@ -84,6 +86,10 @@ func (db *DB) Migrate(ctx context.Context) error {
 	CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 	CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 	CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
+
+	-- Add permission columns if they don't exist
+	ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;
+	ALTER TABLE users ADD COLUMN IF NOT EXISTS can_create_events BOOLEAN DEFAULT FALSE;
 
 	CREATE TABLE IF NOT EXISTS meals (
 		id TEXT PRIMARY KEY,
