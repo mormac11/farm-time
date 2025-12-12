@@ -56,6 +56,8 @@ export interface MealItem {
   meal_id: string
   name: string
   description: string
+  assigned_attendee_id: string | null
+  assigned_attendee_name: string | null
   created_at: string
   updated_at: string
 }
@@ -92,6 +94,7 @@ export interface CreateMealRequest {
 export interface CreateMealItemRequest {
   name: string
   description?: string
+  assigned_attendee_id?: string
 }
 
 export interface CreateMealSignupRequest {

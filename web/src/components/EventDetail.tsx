@@ -305,6 +305,7 @@ export function EventDetail({
       {/* Meals Section */}
       <MealSection
         meals={event.meals || []}
+        attendees={attendees}
         currentUser={currentUser}
         onCreateMeal={onCreateMeal}
         onDeleteMeal={onDeleteMeal}

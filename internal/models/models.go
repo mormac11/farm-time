@@ -89,12 +89,14 @@ type Meal struct {
 
 // MealItem represents something needed for a meal (e.g., "Burgers")
 type MealItem struct {
-	ID          string    `json:"id"`
-	MealID      string    `json:"meal_id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID                   string    `json:"id"`
+	MealID               string    `json:"meal_id"`
+	Name                 string    `json:"name"`
+	Description          string    `json:"description"`
+	AssignedAttendeeID   *string   `json:"assigned_attendee_id"`
+	AssignedAttendeeName *string   `json:"assigned_attendee_name"`
+	CreatedAt            time.Time `json:"created_at"`
+	UpdatedAt            time.Time `json:"updated_at"`
 }
 
 // MealSignup represents a user signing up to bring a meal item
@@ -142,13 +144,15 @@ type UpdateMealRequest struct {
 }
 
 type CreateMealItemRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name               string  `json:"name"`
+	Description        string  `json:"description"`
+	AssignedAttendeeID *string `json:"assigned_attendee_id"`
 }
 
 type UpdateMealItemRequest struct {
-	Name        *string `json:"name,omitempty"`
-	Description *string `json:"description,omitempty"`
+	Name               *string `json:"name,omitempty"`
+	Description        *string `json:"description,omitempty"`
+	AssignedAttendeeID *string `json:"assigned_attendee_id,omitempty"`
 }
 
 type CreateMealSignupRequest struct {

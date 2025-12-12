@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { MealWithItems, MealType, CreateMealRequest, CreateMealItemRequest } from '../api/types'
+import type { MealWithItems, MealType, CreateMealRequest, CreateMealItemRequest, Attendee } from '../api/types'
 
 interface User {
   id: string
@@ -10,6 +10,7 @@ interface User {
 
 interface MealSectionProps {
   meals: MealWithItems[]
+  attendees: Attendee[]
   currentUser: User | null
   onCreateMeal: (data: CreateMealRequest) => Promise<void>
   onDeleteMeal: (mealId: string) => Promise<void>
@@ -37,6 +38,7 @@ const mealTypeIcons: Record<MealType, string> = {
 
 export function MealSection({
   meals,
+  attendees,
   currentUser,
   onCreateMeal,
   onDeleteMeal,
@@ -84,10 +86,13 @@ export function MealSection({
     const form = e.currentTarget
     const formData = new FormData(form)
 
+    const assignedAttendeeId = formData.get('assigned_attendee_id') as string
+
     try {
       await onAddItem(mealId, {
         name: formData.get('name') as string,
         description: formData.get('description') as string || undefined,
+        assigned_attendee_id: assignedAttendeeId || undefined,
       })
       form.reset()
       setAddingItemToMeal(null)
@@ -269,6 +274,11 @@ export function MealSection({
                         {item.description && (
                           <p className="text-sm text-farm-500">{item.description}</p>
                         )}
+                        {item.assigned_attendee_name && (
+                          <p className="text-sm text-forest-600 font-medium">
+                            Assigned to: {item.assigned_attendee_name}
+                          </p>
+                        )}
                         {item.signups.length > 0 ? (
                           <div className="mt-1 space-y-1">
                             {item.signups.map((signup) => (
@@ -318,20 +328,31 @@ export function MealSection({
               {/* Add Item Form */}
               {addingItemToMeal === meal.id ? (
                 <form onSubmit={(e) => handleAddItem(e, meal.id)} className="mt-3 p-3 bg-cream-200 rounded border border-farm-200">
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <input
                       type="text"
                       name="name"
                       required
                       placeholder="Item name (e.g., Burgers)"
-                      className="flex-1 px-3 py-1.5 text-sm border border-farm-300 rounded focus:outline-none focus:ring-2 focus:ring-forest-500 bg-cream-50"
+                      className="flex-1 min-w-[150px] px-3 py-1.5 text-sm border border-farm-300 rounded focus:outline-none focus:ring-2 focus:ring-forest-500 bg-cream-50"
                     />
                     <input
                       type="text"
                       name="description"
                       placeholder="Description (optional)"
-                      className="flex-1 px-3 py-1.5 text-sm border border-farm-300 rounded focus:outline-none focus:ring-2 focus:ring-forest-500 bg-cream-50"
+                      className="flex-1 min-w-[150px] px-3 py-1.5 text-sm border border-farm-300 rounded focus:outline-none focus:ring-2 focus:ring-forest-500 bg-cream-50"
                     />
+                    <select
+                      name="assigned_attendee_id"
+                      className="px-3 py-1.5 text-sm border border-farm-300 rounded focus:outline-none focus:ring-2 focus:ring-forest-500 bg-cream-50"
+                    >
+                      <option value="">Assign to... (optional)</option>
+                      {attendees.map((attendee) => (
+                        <option key={attendee.id} value={attendee.id}>
+                          {attendee.name}
+                        </option>
+                      ))}
+                    </select>
                     <button
                       type="submit"
                       disabled={loading}

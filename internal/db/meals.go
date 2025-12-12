@@ -113,21 +113,31 @@ func (db *DB) DeleteMeal(ctx context.Context, id string) error {
 
 func (db *DB) CreateMealItem(ctx context.Context, mealID string, req models.CreateMealItemRequest) (*models.MealItem, error) {
 	item := &models.MealItem{
-		ID:          uuid.New().String(),
-		MealID:      mealID,
-		Name:        req.Name,
-		Description: req.Description,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:                 uuid.New().String(),
+		MealID:             mealID,
+		Name:               req.Name,
+		Description:        req.Description,
+		AssignedAttendeeID: req.AssignedAttendeeID,
+		CreatedAt:          time.Now(),
+		UpdatedAt:          time.Now(),
 	}
 
 	_, err := db.pool.Exec(ctx,
-		`INSERT INTO meal_items (id, meal_id, name, description, created_at, updated_at)
-		 VALUES ($1, $2, $3, $4, $5, $6)`,
-		item.ID, item.MealID, item.Name, item.Description, item.CreatedAt, item.UpdatedAt,
+		`INSERT INTO meal_items (id, meal_id, name, description, assigned_attendee_id, created_at, updated_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		item.ID, item.MealID, item.Name, item.Description, item.AssignedAttendeeID, item.CreatedAt, item.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
+	}
+
+	// Get attendee name if assigned
+	if item.AssignedAttendeeID != nil {
+		var name string
+		err := db.pool.QueryRow(ctx, `SELECT name FROM attendees WHERE id = $1`, *item.AssignedAttendeeID).Scan(&name)
+		if err == nil {
+			item.AssignedAttendeeName = &name
+		}
 	}
 
 	return item, nil
@@ -136,9 +146,11 @@ func (db *DB) CreateMealItem(ctx context.Context, mealID string, req models.Crea
 func (db *DB) GetMealItem(ctx context.Context, id string) (*models.MealItem, error) {
 	var item models.MealItem
 	err := db.pool.QueryRow(ctx,
-		`SELECT id, meal_id, name, description, created_at, updated_at
-		 FROM meal_items WHERE id = $1`, id,
-	).Scan(&item.ID, &item.MealID, &item.Name, &item.Description, &item.CreatedAt, &item.UpdatedAt)
+		`SELECT mi.id, mi.meal_id, mi.name, mi.description, mi.assigned_attendee_id, a.name, mi.created_at, mi.updated_at
+		 FROM meal_items mi
+		 LEFT JOIN attendees a ON mi.assigned_attendee_id = a.id
+		 WHERE mi.id = $1`, id,
+	).Scan(&item.ID, &item.MealID, &item.Name, &item.Description, &item.AssignedAttendeeID, &item.AssignedAttendeeName, &item.CreatedAt, &item.UpdatedAt)
 
 	if err != nil {
 		return nil, err
@@ -148,8 +160,10 @@ func (db *DB) GetMealItem(ctx context.Context, id string) (*models.MealItem, err
 
 func (db *DB) GetMealItemsByMeal(ctx context.Context, mealID string) ([]models.MealItem, error) {
 	rows, err := db.pool.Query(ctx,
-		`SELECT id, meal_id, name, description, created_at, updated_at
-		 FROM meal_items WHERE meal_id = $1 ORDER BY name ASC`, mealID)
+		`SELECT mi.id, mi.meal_id, mi.name, mi.description, mi.assigned_attendee_id, a.name, mi.created_at, mi.updated_at
+		 FROM meal_items mi
+		 LEFT JOIN attendees a ON mi.assigned_attendee_id = a.id
+		 WHERE mi.meal_id = $1 ORDER BY mi.name ASC`, mealID)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +172,7 @@ func (db *DB) GetMealItemsByMeal(ctx context.Context, mealID string) ([]models.M
 	var items []models.MealItem
 	for rows.Next() {
 		var i models.MealItem
-		if err := rows.Scan(&i.ID, &i.MealID, &i.Name, &i.Description, &i.CreatedAt, &i.UpdatedAt); err != nil {
+		if err := rows.Scan(&i.ID, &i.MealID, &i.Name, &i.Description, &i.AssignedAttendeeID, &i.AssignedAttendeeName, &i.CreatedAt, &i.UpdatedAt); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -179,11 +193,25 @@ func (db *DB) UpdateMealItem(ctx context.Context, id string, req models.UpdateMe
 	if req.Description != nil {
 		item.Description = *req.Description
 	}
+	if req.AssignedAttendeeID != nil {
+		if *req.AssignedAttendeeID == "" {
+			item.AssignedAttendeeID = nil
+			item.AssignedAttendeeName = nil
+		} else {
+			item.AssignedAttendeeID = req.AssignedAttendeeID
+			// Get attendee name
+			var name string
+			err := db.pool.QueryRow(ctx, `SELECT name FROM attendees WHERE id = $1`, *req.AssignedAttendeeID).Scan(&name)
+			if err == nil {
+				item.AssignedAttendeeName = &name
+			}
+		}
+	}
 	item.UpdatedAt = time.Now()
 
 	_, err = db.pool.Exec(ctx,
-		`UPDATE meal_items SET name=$1, description=$2, updated_at=$3 WHERE id=$4`,
-		item.Name, item.Description, item.UpdatedAt, id,
+		`UPDATE meal_items SET name=$1, description=$2, assigned_attendee_id=$3, updated_at=$4 WHERE id=$5`,
+		item.Name, item.Description, item.AssignedAttendeeID, item.UpdatedAt, id,
 	)
 	if err != nil {
 		return nil, err

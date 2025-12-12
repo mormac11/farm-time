@@ -101,6 +101,7 @@ func (db *DB) Migrate(ctx context.Context) error {
 		meal_id TEXT NOT NULL REFERENCES meals(id) ON DELETE CASCADE,
 		name TEXT NOT NULL,
 		description TEXT,
+		assigned_attendee_id TEXT REFERENCES attendees(id) ON DELETE SET NULL,
 		created_at TIMESTAMPTZ DEFAULT NOW(),
 		updated_at TIMESTAMPTZ DEFAULT NOW()
 	);
