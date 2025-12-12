@@ -100,3 +100,33 @@ export interface CreateMealItemRequest {
 export interface CreateMealSignupRequest {
   notes?: string
 }
+
+// Todo types
+export interface Todo {
+  id: string
+  event_id: string
+  title: string
+  description: string
+  completed: boolean
+  assigned_attendee_id: string | null
+  assigned_attendee_name: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateTodoRequest {
+  title: string
+  description?: string
+  assigned_attendee_id?: string
+}
+
+export interface UpdateTodoRequest {
+  title?: string
+  description?: string
+  completed?: boolean
+  assigned_attendee_id?: string
+}
+
+export interface EventWithAll extends EventWithMeals {
+  todos: Todo[]
+}

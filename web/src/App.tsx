@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { api } from './api/client'
-import type { Event, EventWithMeals, CreateEventRequest, CreateAttendeeRequest, CreateMealRequest, CreateMealItemRequest } from './api/types'
+import type { Event, EventWithAll, CreateEventRequest, CreateAttendeeRequest, CreateMealRequest, CreateMealItemRequest, CreateTodoRequest, UpdateTodoRequest } from './api/types'
 import { EventList } from './components/EventList'
 import { EventForm } from './components/EventForm'
 import { EventDetail } from './components/EventDetail'
@@ -18,7 +18,7 @@ function App() {
   const { user, loading: authLoading, login, logout } = useAuth()
   const [view, setView] = useState<View>('list')
   const [events, setEvents] = useState<Event[]>([])
-  const [selectedEvent, setSelectedEvent] = useState<EventWithMeals | null>(null)
+  const [selectedEvent, setSelectedEvent] = useState<EventWithAll | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -146,6 +146,28 @@ function App() {
   const handleRemoveSignup = async (mealId: string, itemId: string) => {
     if (!selectedEvent) return
     await api.removeSignup(selectedEvent.id, mealId, itemId)
+    const updated = await api.getEvent(selectedEvent.id)
+    setSelectedEvent(updated)
+  }
+
+  // Todo handlers
+  const handleCreateTodo = async (data: CreateTodoRequest) => {
+    if (!selectedEvent) return
+    await api.createTodo(selectedEvent.id, data)
+    const updated = await api.getEvent(selectedEvent.id)
+    setSelectedEvent(updated)
+  }
+
+  const handleUpdateTodo = async (todoId: string, data: UpdateTodoRequest) => {
+    if (!selectedEvent) return
+    await api.updateTodo(selectedEvent.id, todoId, data)
+    const updated = await api.getEvent(selectedEvent.id)
+    setSelectedEvent(updated)
+  }
+
+  const handleDeleteTodo = async (todoId: string) => {
+    if (!selectedEvent) return
+    await api.deleteTodo(selectedEvent.id, todoId)
     const updated = await api.getEvent(selectedEvent.id)
     setSelectedEvent(updated)
   }
@@ -292,6 +314,9 @@ function App() {
                 onDeleteMealItem={handleDeleteMealItem}
                 onSignupForItem={handleSignupForItem}
                 onRemoveSignup={handleRemoveSignup}
+                onCreateTodo={handleCreateTodo}
+                onUpdateTodo={handleUpdateTodo}
+                onDeleteTodo={handleDeleteTodo}
               />
             )}
 

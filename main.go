@@ -67,7 +67,7 @@ func main() {
 			r.Get("/", h.ListEvents)
 			r.Post("/", h.CreateEvent)
 			r.Route("/{id}", func(r chi.Router) {
-				r.Get("/", h.GetEventWithMeals)
+				r.Get("/", h.GetEventWithAll)
 				r.Put("/", h.UpdateEvent)
 				r.Delete("/", h.DeleteEvent)
 
@@ -93,6 +93,12 @@ func main() {
 					r.Post("/items/{itemId}/signup", h.SignupForItem)
 					r.Delete("/items/{itemId}/signup", h.RemoveSignup)
 				})
+
+				// Todos for an event
+				r.Get("/todos", h.ListTodos)
+				r.Post("/todos", h.CreateTodo)
+				r.Put("/todos/{todoId}", h.UpdateTodo)
+				r.Delete("/todos/{todoId}", h.DeleteTodo)
 			})
 		})
 	})

@@ -1,6 +1,6 @@
 import type {
   Event,
-  EventWithMeals,
+  EventWithAll,
   Attendee,
   CreateEventRequest,
   CreateAttendeeRequest,
@@ -11,6 +11,9 @@ import type {
   CreateMealRequest,
   CreateMealItemRequest,
   CreateMealSignupRequest,
+  Todo,
+  CreateTodoRequest,
+  UpdateTodoRequest,
 } from './types'
 
 const API_BASE = '/api'
@@ -45,7 +48,7 @@ export const api = {
   // Events
   listEvents: () => request<Event[]>('/events'),
 
-  getEvent: (id: string) => request<EventWithMeals>(`/events/${id}`),
+  getEvent: (id: string) => request<EventWithAll>(`/events/${id}`),
 
   createEvent: (data: CreateEventRequest) =>
     request<Event>('/events', {
@@ -133,6 +136,27 @@ export const api = {
 
   removeSignup: (eventId: string, mealId: string, itemId: string) =>
     request<void>(`/events/${eventId}/meals/${mealId}/items/${itemId}/signup`, {
+      method: 'DELETE',
+    }),
+
+  // Todos
+  listTodos: (eventId: string) =>
+    request<Todo[]>(`/events/${eventId}/todos`),
+
+  createTodo: (eventId: string, data: CreateTodoRequest) =>
+    request<Todo>(`/events/${eventId}/todos`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateTodo: (eventId: string, todoId: string, data: UpdateTodoRequest) =>
+    request<Todo>(`/events/${eventId}/todos/${todoId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deleteTodo: (eventId: string, todoId: string) =>
+    request<void>(`/events/${eventId}/todos/${todoId}`, {
       method: 'DELETE',
     }),
 }

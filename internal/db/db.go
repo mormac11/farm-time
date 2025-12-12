@@ -119,6 +119,19 @@ func (db *DB) Migrate(ctx context.Context) error {
 	CREATE INDEX IF NOT EXISTS idx_meal_items_meal_id ON meal_items(meal_id);
 	CREATE INDEX IF NOT EXISTS idx_meal_signups_item ON meal_signups(meal_item_id);
 	CREATE INDEX IF NOT EXISTS idx_meal_signups_user ON meal_signups(user_id);
+
+	CREATE TABLE IF NOT EXISTS todos (
+		id TEXT PRIMARY KEY,
+		event_id TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+		title TEXT NOT NULL,
+		description TEXT,
+		completed BOOLEAN DEFAULT FALSE,
+		assigned_attendee_id TEXT REFERENCES attendees(id) ON DELETE SET NULL,
+		created_at TIMESTAMPTZ DEFAULT NOW(),
+		updated_at TIMESTAMPTZ DEFAULT NOW()
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_todos_event_id ON todos(event_id);
 	`
 
 	_, err := db.pool.Exec(ctx, schema)

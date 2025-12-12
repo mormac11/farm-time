@@ -158,3 +158,35 @@ type UpdateMealItemRequest struct {
 type CreateMealSignupRequest struct {
 	Notes string `json:"notes"`
 }
+
+// Todo represents a task item for an event
+type Todo struct {
+	ID                   string    `json:"id"`
+	EventID              string    `json:"event_id"`
+	Title                string    `json:"title"`
+	Description          string    `json:"description"`
+	Completed            bool      `json:"completed"`
+	AssignedAttendeeID   *string   `json:"assigned_attendee_id"`
+	AssignedAttendeeName *string   `json:"assigned_attendee_name"`
+	CreatedAt            time.Time `json:"created_at"`
+	UpdatedAt            time.Time `json:"updated_at"`
+}
+
+type CreateTodoRequest struct {
+	Title              string  `json:"title"`
+	Description        string  `json:"description"`
+	AssignedAttendeeID *string `json:"assigned_attendee_id"`
+}
+
+type UpdateTodoRequest struct {
+	Title              *string `json:"title,omitempty"`
+	Description        *string `json:"description,omitempty"`
+	Completed          *bool   `json:"completed,omitempty"`
+	AssignedAttendeeID *string `json:"assigned_attendee_id,omitempty"`
+}
+
+// EventWithAll extends EventWithMeals to include todos
+type EventWithAll struct {
+	EventWithMeals
+	Todos []Todo `json:"todos"`
+}

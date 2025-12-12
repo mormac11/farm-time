@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import type { EventWithMeals, CreateAttendeeRequest, Attendee, CreateMealRequest, CreateMealItemRequest } from '../api/types'
+import type { EventWithAll, CreateAttendeeRequest, Attendee, CreateMealRequest, CreateMealItemRequest, CreateTodoRequest, UpdateTodoRequest } from '../api/types'
 import { AttendeeForm } from './AttendeeForm'
 import { MealSection } from './MealSection'
+import { TodoSection } from './TodoSection'
 
 interface User {
   id: string
@@ -10,8 +11,10 @@ interface User {
   picture: string
 }
 
+type Tab = 'overview' | 'attendees' | 'meals' | 'tasks'
+
 interface EventDetailProps {
-  event: EventWithMeals
+  event: EventWithAll
   currentUser: User | null
   onBack: () => void
   onEdit: () => void
@@ -24,6 +27,9 @@ interface EventDetailProps {
   onDeleteMealItem: (mealId: string, itemId: string) => Promise<void>
   onSignupForItem: (mealId: string, itemId: string, notes?: string) => Promise<void>
   onRemoveSignup: (mealId: string, itemId: string) => Promise<void>
+  onCreateTodo: (data: CreateTodoRequest) => Promise<void>
+  onUpdateTodo: (todoId: string, data: UpdateTodoRequest) => Promise<void>
+  onDeleteTodo: (todoId: string) => Promise<void>
 }
 
 function formatDateTime(dateString: string) {
@@ -58,7 +64,11 @@ export function EventDetail({
   onDeleteMealItem,
   onSignupForItem,
   onRemoveSignup,
+  onCreateTodo,
+  onUpdateTodo,
+  onDeleteTodo,
 }: EventDetailProps) {
+  const [activeTab, setActiveTab] = useState<Tab>('overview')
   const [showAddForm, setShowAddForm] = useState(false)
   const [rsvpLoading, setRsvpLoading] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
@@ -71,9 +81,12 @@ export function EventDetail({
   }
 
   const attendees = event.attendees || []
+  const todos = event.todos || []
+  const meals = event.meals || []
   const attending = attendees.filter((a) => a.status === 'attending')
   const maybe = attendees.filter((a) => a.status === 'maybe')
   const declined = attendees.filter((a) => a.status === 'declined')
+  const pendingTodos = todos.filter(t => !t.completed)
 
   // Check if current user is already an attendee
   const myAttendee = currentUser
@@ -103,35 +116,40 @@ export function EventDetail({
     }
   }
 
-  return (
-    <div className="space-y-6">
-      <button
-        onClick={onBack}
-        className="flex items-center gap-2 text-farm-600 hover:text-farm-900"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-        Back to events
-      </button>
+  const tabs: { id: Tab; label: string; count?: number }[] = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'attendees', label: 'Attendees', count: attendees.length },
+    { id: 'meals', label: 'Meals', count: meals.length },
+    { id: 'tasks', label: 'Tasks', count: pendingTodos.length },
+  ]
 
-      <div className="bg-cream-50 rounded-lg shadow p-6 border border-farm-200">
-        <div className="flex items-start justify-between gap-4">
-          <h1 className="text-2xl font-bold text-farm-900">{event.title}</h1>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={onEdit}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-forest-100 text-forest-700 rounded-md hover:bg-forest-200 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Edit
-            </button>
-            <button
-              onClick={copyEventLink}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-farm-100 text-farm-700 rounded-md hover:bg-farm-200 transition-colors"
-            >
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-farm-600 hover:text-farm-900"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to events
+        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onEdit}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-forest-100 text-forest-700 rounded-md hover:bg-forest-200 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Edit
+          </button>
+          <button
+            onClick={copyEventLink}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-farm-100 text-farm-700 rounded-md hover:bg-farm-200 transition-colors"
+          >
             {linkCopied ? (
               <>
                 <svg className="w-4 h-4 text-forest-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -147,30 +165,32 @@ export function EventDetail({
                 Share
               </>
             )}
-            </button>
-          </div>
+          </button>
         </div>
+      </div>
 
+      {/* Event Title Card */}
+      <div className="bg-cream-50 rounded-lg shadow p-6 border border-farm-200">
+        <h1 className="text-2xl font-bold text-farm-900">{event.title}</h1>
         {event.description && (
           <p className="mt-2 text-farm-600">{event.description}</p>
         )}
-
-        <div className="mt-4 space-y-2 text-farm-600">
+        <div className="mt-4 flex flex-wrap gap-4 text-sm text-farm-600">
           <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-forest-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-forest-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <span>{formatDateTime(event.start_time)}</span>
           </div>
           <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-forest-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-forest-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span>Until {formatDateTime(event.end_time)}</span>
           </div>
           {event.location && (
             <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-forest-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-forest-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
@@ -180,140 +200,213 @@ export function EventDetail({
         </div>
       </div>
 
-      {/* RSVP Section */}
-      {currentUser && (
-        <div className="bg-cream-50 rounded-lg shadow p-6 border border-farm-200">
-          <h2 className="text-lg font-semibold text-farm-800 mb-3">Your RSVP</h2>
-          {myAttendee ? (
-            <div className="flex items-center gap-4">
-              <span className="text-farm-600">
-                You're marked as <span className={`font-medium px-2 py-1 rounded ${statusColors[myAttendee.status]}`}>{myAttendee.status}</span>
-              </span>
-              <span className="text-farm-400">|</span>
-              <span className="text-sm text-farm-500">Change to:</span>
-              {myAttendee.status !== 'attending' && (
-                <button
-                  onClick={() => handleRsvp('attending')}
-                  disabled={rsvpLoading}
-                  className="px-3 py-1 text-sm bg-forest-600 text-white rounded hover:bg-forest-700 disabled:opacity-50 transition-colors"
-                >
-                  Attending
-                </button>
-              )}
-              {myAttendee.status !== 'maybe' && (
-                <button
-                  onClick={() => handleRsvp('maybe')}
-                  disabled={rsvpLoading}
-                  className="px-3 py-1 text-sm bg-farm-500 text-white rounded hover:bg-farm-600 disabled:opacity-50 transition-colors"
-                >
-                  Maybe
-                </button>
-              )}
-              {myAttendee.status !== 'declined' && (
-                <button
-                  onClick={() => handleRsvp('declined')}
-                  disabled={rsvpLoading}
-                  className="px-3 py-1 text-sm bg-rust-500 text-white rounded hover:bg-rust-600 disabled:opacity-50 transition-colors"
-                >
-                  Can't Go
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <span className="text-farm-600 mr-2">Will you attend?</span>
-              <button
-                onClick={() => handleRsvp('attending')}
-                disabled={rsvpLoading}
-                className="px-4 py-2 bg-forest-600 text-white rounded-md hover:bg-forest-700 disabled:opacity-50 transition-colors"
-              >
-                Yes, I'll be there
-              </button>
-              <button
-                onClick={() => handleRsvp('maybe')}
-                disabled={rsvpLoading}
-                className="px-4 py-2 bg-farm-500 text-white rounded-md hover:bg-farm-600 disabled:opacity-50 transition-colors"
-              >
-                Maybe
-              </button>
-              <button
-                onClick={() => handleRsvp('declined')}
-                disabled={rsvpLoading}
-                className="px-4 py-2 bg-rust-500 text-white rounded-md hover:bg-rust-600 disabled:opacity-50 transition-colors"
-              >
-                Can't Go
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="bg-cream-50 rounded-lg shadow p-6 border border-farm-200">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-farm-800">
-            Attendees ({attendees.length})
-          </h2>
-          {!showAddForm && (
+      {/* Tabs */}
+      <div className="border-b border-farm-200">
+        <nav className="flex gap-1">
+          {tabs.map((tab) => (
             <button
-              onClick={() => setShowAddForm(true)}
-              className="px-4 py-2 bg-rust-600 text-white rounded-md hover:bg-rust-700 transition-colors"
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? 'border-forest-600 text-forest-700'
+                  : 'border-transparent text-farm-500 hover:text-farm-700 hover:border-farm-300'
+              }`}
             >
-              Add Attendee
+              {tab.label}
+              {tab.count !== undefined && (
+                <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                  activeTab === tab.id ? 'bg-forest-100 text-forest-700' : 'bg-farm-100 text-farm-600'
+                }`}>
+                  {tab.count}
+                </span>
+              )}
             </button>
-          )}
-        </div>
-
-        {showAddForm && (
-          <div className="mb-6">
-            <AttendeeForm
-              onSubmit={handleAddAttendee}
-              onCancel={() => setShowAddForm(false)}
-            />
-          </div>
-        )}
-
-        <div className="flex gap-4 mb-4 text-sm">
-          <span className="px-2 py-1 bg-forest-100 text-forest-800 rounded">
-            {attending.length} attending
-          </span>
-          <span className="px-2 py-1 bg-farm-200 text-farm-800 rounded">
-            {maybe.length} maybe
-          </span>
-          <span className="px-2 py-1 bg-rust-100 text-rust-800 rounded">
-            {declined.length} declined
-          </span>
-        </div>
-
-        {attendees.length === 0 ? (
-          <p className="text-farm-500 text-center py-4">
-            No attendees yet. Add someone!
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {attendees.map((attendee) => (
-              <AttendeeRow
-                key={attendee.id}
-                attendee={attendee}
-                onUpdateStatus={(status) => onUpdateAttendee(attendee.id, status)}
-                onRemove={() => onRemoveAttendee(attendee.id)}
-              />
-            ))}
-          </div>
-        )}
+          ))}
+        </nav>
       </div>
 
-      {/* Meals Section */}
-      <MealSection
-        meals={event.meals || []}
-        attendees={attendees}
-        currentUser={currentUser}
-        onCreateMeal={onCreateMeal}
-        onDeleteMeal={onDeleteMeal}
-        onAddItem={onAddMealItem}
-        onDeleteItem={onDeleteMealItem}
-        onSignup={onSignupForItem}
-        onRemoveSignup={onRemoveSignup}
-      />
+      {/* Tab Content */}
+      <div className="bg-cream-50 rounded-lg shadow p-6 border border-farm-200">
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {/* RSVP Section */}
+            {currentUser && (
+              <div>
+                <h2 className="text-lg font-semibold text-farm-800 mb-3">Your RSVP</h2>
+                {myAttendee ? (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-farm-600">
+                      You're marked as <span className={`font-medium px-2 py-1 rounded ${statusColors[myAttendee.status]}`}>{myAttendee.status}</span>
+                    </span>
+                    <span className="text-farm-400">|</span>
+                    <span className="text-sm text-farm-500">Change to:</span>
+                    {myAttendee.status !== 'attending' && (
+                      <button
+                        onClick={() => handleRsvp('attending')}
+                        disabled={rsvpLoading}
+                        className="px-3 py-1 text-sm bg-forest-600 text-white rounded hover:bg-forest-700 disabled:opacity-50 transition-colors"
+                      >
+                        Attending
+                      </button>
+                    )}
+                    {myAttendee.status !== 'maybe' && (
+                      <button
+                        onClick={() => handleRsvp('maybe')}
+                        disabled={rsvpLoading}
+                        className="px-3 py-1 text-sm bg-farm-500 text-white rounded hover:bg-farm-600 disabled:opacity-50 transition-colors"
+                      >
+                        Maybe
+                      </button>
+                    )}
+                    {myAttendee.status !== 'declined' && (
+                      <button
+                        onClick={() => handleRsvp('declined')}
+                        disabled={rsvpLoading}
+                        className="px-3 py-1 text-sm bg-rust-500 text-white rounded hover:bg-rust-600 disabled:opacity-50 transition-colors"
+                      >
+                        Can't Go
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-farm-600 mr-2">Will you attend?</span>
+                    <button
+                      onClick={() => handleRsvp('attending')}
+                      disabled={rsvpLoading}
+                      className="px-4 py-2 bg-forest-600 text-white rounded-md hover:bg-forest-700 disabled:opacity-50 transition-colors"
+                    >
+                      Yes, I'll be there
+                    </button>
+                    <button
+                      onClick={() => handleRsvp('maybe')}
+                      disabled={rsvpLoading}
+                      className="px-4 py-2 bg-farm-500 text-white rounded-md hover:bg-farm-600 disabled:opacity-50 transition-colors"
+                    >
+                      Maybe
+                    </button>
+                    <button
+                      onClick={() => handleRsvp('declined')}
+                      disabled={rsvpLoading}
+                      className="px-4 py-2 bg-rust-500 text-white rounded-md hover:bg-rust-600 disabled:opacity-50 transition-colors"
+                    >
+                      Can't Go
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Quick Stats */}
+            <div>
+              <h2 className="text-lg font-semibold text-farm-800 mb-3">Event Summary</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-4 bg-forest-50 rounded-lg border border-forest-200">
+                  <div className="text-2xl font-bold text-forest-700">{attending.length}</div>
+                  <div className="text-sm text-forest-600">Attending</div>
+                </div>
+                <div className="p-4 bg-farm-50 rounded-lg border border-farm-200">
+                  <div className="text-2xl font-bold text-farm-700">{maybe.length}</div>
+                  <div className="text-sm text-farm-600">Maybe</div>
+                </div>
+                <div className="p-4 bg-cream-100 rounded-lg border border-farm-200">
+                  <div className="text-2xl font-bold text-farm-700">{meals.length}</div>
+                  <div className="text-sm text-farm-600">Meals Planned</div>
+                </div>
+                <div className="p-4 bg-cream-100 rounded-lg border border-farm-200">
+                  <div className="text-2xl font-bold text-farm-700">{pendingTodos.length}</div>
+                  <div className="text-sm text-farm-600">Tasks Remaining</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Attendees Tab */}
+        {activeTab === 'attendees' && (
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-farm-800">
+                Attendees ({attendees.length})
+              </h2>
+              {!showAddForm && (
+                <button
+                  onClick={() => setShowAddForm(true)}
+                  className="px-4 py-2 bg-rust-600 text-white rounded-md hover:bg-rust-700 transition-colors"
+                >
+                  + Add Attendee
+                </button>
+              )}
+            </div>
+
+            {showAddForm && (
+              <div className="mb-6">
+                <AttendeeForm
+                  onSubmit={handleAddAttendee}
+                  onCancel={() => setShowAddForm(false)}
+                />
+              </div>
+            )}
+
+            <div className="flex gap-4 mb-4 text-sm">
+              <span className="px-2 py-1 bg-forest-100 text-forest-800 rounded">
+                {attending.length} attending
+              </span>
+              <span className="px-2 py-1 bg-farm-200 text-farm-800 rounded">
+                {maybe.length} maybe
+              </span>
+              <span className="px-2 py-1 bg-rust-100 text-rust-800 rounded">
+                {declined.length} declined
+              </span>
+            </div>
+
+            {attendees.length === 0 ? (
+              <p className="text-farm-500 text-center py-8">
+                No attendees yet. Add someone!
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {attendees.map((attendee) => (
+                  <AttendeeRow
+                    key={attendee.id}
+                    attendee={attendee}
+                    onUpdateStatus={(status) => onUpdateAttendee(attendee.id, status)}
+                    onRemove={() => onRemoveAttendee(attendee.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Meals Tab */}
+        {activeTab === 'meals' && (
+          <MealSection
+            meals={meals}
+            attendees={attendees}
+            currentUser={currentUser}
+            onCreateMeal={onCreateMeal}
+            onDeleteMeal={onDeleteMeal}
+            onAddItem={onAddMealItem}
+            onDeleteItem={onDeleteMealItem}
+            onSignup={onSignupForItem}
+            onRemoveSignup={onRemoveSignup}
+          />
+        )}
+
+        {/* Tasks Tab */}
+        {activeTab === 'tasks' && (
+          <TodoSection
+            todos={todos}
+            attendees={attendees}
+            onCreateTodo={onCreateTodo}
+            onUpdateTodo={onUpdateTodo}
+            onDeleteTodo={onDeleteTodo}
+          />
+        )}
+      </div>
     </div>
   )
 }
