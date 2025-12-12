@@ -1,0 +1,25 @@
+# Development compose - run frontend separately with hot reload
+# Usage:
+#   1. Start the DB: docker compose -f docker-compose.dev.yml up db
+#   2. Run Go backend: go run . (in project root)
+#   3. Run frontend: cd web && npm run dev
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=farmtime
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
