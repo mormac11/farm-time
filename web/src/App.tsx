@@ -229,13 +229,16 @@ function App() {
       <header className="bg-forest-800 text-white shadow-lg">
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
-            <div>
+            <button
+              onClick={handleBack}
+              className="text-left hover:opacity-80 transition-opacity"
+            >
               <div className="flex items-center gap-3">
                 <TractorIcon className="w-8 h-8 text-cream-200" />
                 <h1 className="text-2xl font-bold">Farm Time</h1>
               </div>
               <p className="mt-1 text-forest-200">Event Scheduler & Attendance Tracker</p>
-            </div>
+            </button>
             <div className="flex items-center gap-4">
               <img
                 src={user.picture}
