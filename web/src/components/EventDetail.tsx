@@ -303,22 +303,34 @@ export function EventDetail({
             <div>
               <h2 className="text-lg font-semibold text-farm-800 mb-3">Event Summary</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-4 bg-forest-50 rounded-lg border border-forest-200">
+                <button
+                  onClick={() => setActiveTab('attendees')}
+                  className="p-4 bg-forest-50 rounded-lg border border-forest-200 hover:bg-forest-100 hover:border-forest-300 transition-colors text-left"
+                >
                   <div className="text-2xl font-bold text-forest-700">{attending.length}</div>
                   <div className="text-sm text-forest-600">Attending</div>
-                </div>
-                <div className="p-4 bg-farm-50 rounded-lg border border-farm-200">
+                </button>
+                <button
+                  onClick={() => setActiveTab('attendees')}
+                  className="p-4 bg-farm-50 rounded-lg border border-farm-200 hover:bg-farm-100 hover:border-farm-300 transition-colors text-left"
+                >
                   <div className="text-2xl font-bold text-farm-700">{maybe.length}</div>
                   <div className="text-sm text-farm-600">Maybe</div>
-                </div>
-                <div className="p-4 bg-cream-100 rounded-lg border border-farm-200">
+                </button>
+                <button
+                  onClick={() => setActiveTab('meals')}
+                  className="p-4 bg-cream-100 rounded-lg border border-farm-200 hover:bg-cream-200 hover:border-farm-300 transition-colors text-left"
+                >
                   <div className="text-2xl font-bold text-farm-700">{meals.length}</div>
                   <div className="text-sm text-farm-600">Meals Planned</div>
-                </div>
-                <div className="p-4 bg-cream-100 rounded-lg border border-farm-200">
+                </button>
+                <button
+                  onClick={() => setActiveTab('tasks')}
+                  className="p-4 bg-cream-100 rounded-lg border border-farm-200 hover:bg-cream-200 hover:border-farm-300 transition-colors text-left"
+                >
                   <div className="text-2xl font-bold text-farm-700">{pendingTodos.length}</div>
                   <div className="text-sm text-farm-600">Tasks Remaining</div>
-                </div>
+                </button>
               </div>
             </div>
           </div>
