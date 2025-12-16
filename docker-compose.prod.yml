@@ -6,7 +6,7 @@ services:
       - DATABASE_URL=postgres://postgres:${DB_PASSWORD:-postgres}@db:5432/farmtime?sslmode=disable
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_REDIRECT_URL=https://www.donaldson.farm/auth/google/callback
+      - GOOGLE_REDIRECT_URL=https://donaldson.farm/auth/google/callback
     depends_on:
       db:
         condition: service_healthy
